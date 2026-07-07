@@ -1,4 +1,4 @@
-const order = {
+let order = JSON.parse(localStorage.getItem("order")) || {
   drink: "espresso",
   size: "medium",
   milk: "regular",
@@ -14,9 +14,9 @@ const prices = {
   small: 0.0,
   medium: 0.5,
   large: 1.0,
-  'whipped': 0.75,
-  'chocolate': 0.6,
-  'caramel': 0.6,
+  whipped: 0.75,
+  chocolate: 0.6,
+  caramel: 0.6,
 };
 
 const drinkColours = {
@@ -34,13 +34,18 @@ const sizeHeight = {
 };
 
 const extraLabels = {
-  'whipped': "Whipped",
-  'caramel': "Caramel",
-  'chocolate': "Chocolate",
+  whipped: "Whipped",
+  caramel: "Caramel",
+  chocolate: "Chocolate",
 };
 
 const cup = document.getElementById("cup");
 const summary = document.getElementById("summary");
+
+// Save order to localStorage
+function saveOrder() {
+  localStorage.setItem("order", JSON.stringify(order));
+}
 
 function updateCup() {
   cup.style.setProperty("--fill-colour", drinkColours[order.drink]);
@@ -55,10 +60,14 @@ function updateCup() {
 
 function updateSummary() {
   const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
   const milkLabel =
-    order.milk === "no milk" ? "No Milk" : cap(order.milk) + " Milk";
+    order.milk === "no milk"
+      ? "No Milk"
+      : cap(order.milk) + " Milk";
 
   let total = prices[order.drink] + prices[order.size];
+
   order.extras.forEach((e) => {
     total += prices[e];
   });
@@ -69,26 +78,36 @@ function updateSummary() {
       <div class="summary-row">
         <span>${extraLabels[e]}</span>
         <span>+$${prices[e].toFixed(2)}</span>
-      </div>`,
+      </div>`
     )
     .join("");
 
   summary.innerHTML = `
     <h3>Your Order</h3>
+
     <div class="summary-row">
       <span>${cap(order.drink)}</span>
       <span>$${prices[order.drink].toFixed(2)}</span>
     </div>
+
     <div class="summary-row">
       <span>${cap(order.size)}</span>
-      <span>${prices[order.size] > 0 ? "+$" + prices[order.size].toFixed(2) : "—"}</span>
+      <span>${
+        prices[order.size] > 0
+          ? "+$" + prices[order.size].toFixed(2)
+          : "—"
+      }</span>
     </div>
+
     <div class="summary-row">
       <span>${milkLabel}</span>
       <span>—</span>
     </div>
+
     ${extraRows}
+
     <hr class="summary-divider" />
+
     <div class="summary-total">
       <span>Total</span>
       <span>$${total.toFixed(2)}</span>
@@ -96,50 +115,79 @@ function updateSummary() {
   `;
 }
 
+// Drink
 document.querySelectorAll('input[name="drink"]').forEach((input) => {
   input.addEventListener("change", function () {
     order.drink = this.value;
-    console.log(order);
+    saveOrder();
     updateCup();
     updateSummary();
   });
 });
 
+// Size
 document.querySelectorAll('input[name="size"]').forEach((input) => {
   input.addEventListener("change", function () {
     order.size = this.value;
-    console.log(order);
+    saveOrder();
     updateCup();
     updateSummary();
   });
 });
 
+// Milk
 document.querySelectorAll('input[name="milk"]').forEach((input) => {
   input.addEventListener("change", function () {
     order.milk = this.value;
+    saveOrder();
     updateCup();
     updateSummary();
   });
 });
 
+// Extras
 document.querySelectorAll('input[name="extras"]').forEach((input) => {
   input.addEventListener("change", function () {
     if (this.checked) {
-      order.extras.push(this.value);
+      if (!order.extras.includes(this.value)) {
+        order.extras.push(this.value);
+      }
     } else {
-      const i = order.extras.indexOf(this.value);
-      order.extras.splice(i, 1);
+      const index = order.extras.indexOf(this.value);
+      if (index !== -1) {
+        order.extras.splice(index, 1);
+      }
     }
-    console.log(order);
+
+    saveOrder();
     updateCup();
     updateSummary();
   });
 });
 
-// document.querySelectorAll('input[name="drink"]').forEach((i) => i.checked = i.value === order.drink);
-// document.querySelectorAll('input[name="size"]').forEach((i) => i.checked = i.value === order.size);
-// document.querySelectorAll('input[name="milk"]').forEach((i) => i.checked = i.value === order.milk);
-// document.querySelectorAll('input[name="extras"]').forEach((i) => i.checked = false);
+// Restore selected drink
+document.querySelectorAll('input[name="drink"]').forEach((i) => {
+  i.checked = i.value === order.drink;
+});
 
+// Restore selected size
+document.querySelectorAll('input[name="size"]').forEach((i) => {
+  i.checked = i.value === order.size;
+});
+
+// Restore selected milk
+document.querySelectorAll('input[name="milk"]').forEach((i) => {
+  i.checked = i.value === order.milk;
+});
+
+// Restore selected extras
+document.querySelectorAll('input[name="extras"]').forEach((i) => {
+  i.checked = order.extras.includes(i.value);
+});
+
+// Save default order if nothing exists yet
+saveOrder();
+
+// Draw UI
 updateCup();
 updateSummary();
